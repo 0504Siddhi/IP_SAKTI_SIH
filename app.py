@@ -12,7 +12,7 @@ from extractor import extract_structured_intake
 from retriever import retrieve_section_3p_evidence, retrieve_gap_navigator_evidence
 
 # Import LLM Synthesis & Safe Abstention Engine (Step 5 & Step 6)
-from synthesizer import synthesize_results, check_sufficiency
+from synthesizer import synthesize_results, check_sufficiency, pick_primary_side
 
 # Set Streamlit Page Configuration
 st.set_page_config(
@@ -37,6 +37,8 @@ if "qa_query" not in st.session_state:
     st.session_state.qa_query = ""
 if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = True
+if "screen_history" not in st.session_state:
+    st.session_state.screen_history = []
 
 # Load Custom CSS System & Theme Overrides
 def load_css():
@@ -84,16 +86,32 @@ def load_css():
 
 load_css()
 
-def navigate_to(screen_name):
+def navigate_to(screen_name, track_history=True):
+    if "draft_product_text" in st.session_state and st.session_state.draft_product_text:
+        st.session_state["_saved_draft_product_text"] = st.session_state.draft_product_text
+    if "draft_innovation_text" in st.session_state and st.session_state.draft_innovation_text:
+        st.session_state["_saved_draft_innovation_text"] = st.session_state.draft_innovation_text
+    if track_history and st.session_state.current_screen != screen_name:
+        st.session_state.screen_history.append(st.session_state.current_screen)
     st.session_state.current_screen = screen_name
     st.rerun()
+
+def navigate_back():
+    if st.session_state.screen_history:
+        prev = st.session_state.screen_history.pop()
+        navigate_to(prev, track_history=False)
+
+def render_back_button():
+    if st.session_state.screen_history:
+        if st.button("← Back", key=f"btn_back_{st.session_state.current_screen}"):
+            navigate_back()
 
 # Screen 0 Header with Monogram, Devanagari Language Selector, and Light/Dark Mode Toggle
 def render_screen_0_header():
     col1, col2, col3 = st.columns([3.2, 1.2, 0.8])
     with col1:
         st.markdown(
-            '<div class="top-header-bar"><div class="brand-container"><div class="brand-monogram"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B8703C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.1 2 7 0 6-4.5 11-10 11z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" stroke="#388BFD"/></svg></div><div><div class="brand-title">IP-SAKTI Sahayak</div><div class="brand-subtitle">Regulatory & Intellectual Property Decision-Support Infrastructure</div></div></div><div class="corpus-status-pill"><div class="corpus-pulse-dot"></div>CORPUS INDEXED · LIVE</div></div>',
+            '<div class="top-header-bar"><div class="brand-container"><div class="brand-monogram"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B8703C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.1 2 7 0 6-4.5 11-10 11z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" stroke="#388BFD"/></svg></div><div><div class="brand-title">IP-SAKTI Sahayak</div><div class="brand-subtitle">Regulatory &amp; Intellectual Property Decision-Support Infrastructure</div></div></div><div class="corpus-status-pill"><div class="corpus-pulse-dot"></div>CORPUS INDEXED · STATIC v1</div></div>',
             unsafe_allow_html=True
         )
     with col2:
@@ -125,14 +143,17 @@ def render_screen_0_bottom_banner():
         unsafe_allow_html=True
     )
 
-# Fixed Evidence Status Badge Generator (🔴 #C0392B · 🟡 #B7860B · 🔵 #2874A6)
+# Evidence Status Badge Generator (🟢 · 🔴 #C0392B · 🟡 #B7860B · 🔵 #2874A6)
 def render_status_badge(status_str):
-    if "🔴" in status_str or "Evidence Found" in status_str:
-        return '<span class="badge-red">🔴 Evidence Found</span>'
+    """Renders a coloured badge whose visible text matches the actual status_str."""
+    if "🟢" in status_str or "Recommended" in status_str:
+        return f'<span class="badge-green">{status_str}</span>'
+    elif "🔴" in status_str or "Evidence Found" in status_str:
+        return f'<span class="badge-red">{status_str}</span>'
     elif "🟡" in status_str or "Requires Review" in status_str:
-        return '<span class="badge-yellow">🟡 Requires Review</span>'
+        return f'<span class="badge-yellow">{status_str}</span>'
     else:
-        return '<span class="badge-blue">🔵 No Direct Match in Searched Corpus</span>'
+        return f'<span class="badge-blue">{status_str}</span>'
 
 # Evidence Sufficiency Meter Widget Component with Animation
 def render_sufficiency_meter(level_str):
@@ -183,6 +204,7 @@ def render_confidence_bar(sufficiency: str, status_str: str) -> str:
 # ==========================================
 def render_screen_1_welcome():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown(
         '<div class="hero-gradient-container"><div class="hero-content"><div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-terracotta); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">AYURVEDA REGULATORY INTELLIGENCE PLATFORM</div><div class="gradient-headline">Ayurveda IP & Regulatory Decision Support</div><p style="color: var(--text-muted); font-size: 1rem; max-width: 780px; line-height: 1.55; margin-bottom: 0;">Evaluate traditional product pathways, analyze Section 3(p) Traditional Knowledge patent-bar exposure, and verify statutory evidence across national and international legal regimes.</p><div class="stat-strip-container"><div class="stat-item"><div class="stat-number">7 Core Statutes</div><div class="stat-label">Tier-1 Acts & Regulations Scope</div></div><div class="stat-item"><div class="stat-number">2 Regimes</div><div class="stat-label">India & International Separation</div></div><div class="stat-item"><div class="stat-number">Citation-Verified</div><div class="stat-label">Every Answer Traceable to Source</div></div></div></div></div>',
@@ -213,6 +235,7 @@ def render_screen_1_welcome():
 # ==========================================
 def render_screen_2_jurisdiction():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Jurisdiction Selection")
     st.write("Select legal jurisdiction for search space scoping:")
@@ -239,6 +262,7 @@ def render_screen_2_jurisdiction():
 # ==========================================
 def render_screen_3_entry_mode():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Product Intake Method")
     st.write("Select product or innovation input method:")
@@ -275,13 +299,15 @@ def render_screen_3_entry_mode():
 # ==========================================
 def render_screen_4a_describe_product():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Product Formulation Specification")
     st.write("Enter product details for LLM parameter extraction:")
     
     user_text = st.text_area(
         "Product Description",
-        value="I have developed an Ashwagandha capsule (10:1 hydro-alcoholic extract) for stress and anxiety support, administered orally for general adults.",
+        value=st.session_state.get("draft_product_text") or st.session_state.get("_saved_draft_product_text", ""),
+        key="draft_product_text",
         height=140
     )
     
@@ -298,6 +324,7 @@ def render_screen_4a_describe_product():
 # ==========================================
 def render_screen_4b_scan_product():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Product Label OCR Scan")
     st.write("Upload product label image for entity extraction:")
@@ -318,13 +345,15 @@ def render_screen_4b_scan_product():
 # ==========================================
 def render_screen_4c_describe_innovation():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Describe My Innovation")
     st.write("Tell us about your idea in your own words — our system will analyse it for regulatory classification and IP risk screening.")
     
     user_text = st.text_area(
         "Describe your innovation",
-        value="",
+        value=st.session_state.get("draft_innovation_text") or st.session_state.get("_saved_draft_innovation_text", ""),
+        key="draft_innovation_text",
         placeholder="e.g. A new extraction process for Ashwagandha to improve absorption.",
         height=140
     )
@@ -343,6 +372,7 @@ def render_screen_4c_describe_innovation():
 # ==========================================
 def render_screen_5_confirm_intake():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Structured Data Confirmation (Mandatory Confirmation Screen)")
     st.info("Mandatory Gate: Confirm or edit AI-extracted formulation parameters before deterministic rule evaluation.")
@@ -397,6 +427,7 @@ def render_screen_5_confirm_intake():
 # ==========================================
 def render_screen_6_processing():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Execution Pipeline")
     
@@ -429,13 +460,14 @@ def render_screen_6_processing():
 # ==========================================
 def render_screen_7_classification_result():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Preliminary Regulatory Classification")
     
     # Step 2 Real Deterministic Evaluation Call
     res = classify_formulation(st.session_state.intake_data)
     
-    reasons_html = "".join([f"<li>• {r}</li>" for r in res['reasons']])
+    reasons_html = "".join([f"<li>{r}</li>" for r in res['reasons']])
     st.markdown(
         f'<div class="sakti-card sakti-card-terracotta-accent"><div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-terracotta); font-weight: 700;">PRELIMINARY ROUTING RESULT (DETERMINISTIC PYTHON ENGINE)</div><h2 style="font-size: 1.6rem; margin-top: 0.25rem;">Category: {res["category"]}</h2><div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; font-weight: 500;">Deterministic Rule Basis:</div><ul style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.6; margin-top: 0.25rem;">{reasons_html}</ul><div style="margin-top: 1rem; font-size: 0.82rem; color: #F1C40F; background: rgba(183, 134, 11, 0.12); padding: 0.65rem; border-radius: 4px; border: 1px solid rgba(183, 134, 11, 0.3);">⚠️ {res["disclaimer"]}</div></div>',
         unsafe_allow_html=True
@@ -449,52 +481,29 @@ def render_screen_7_classification_result():
 # ==========================================
 # SCREEN 8 & 8b: Main Results & Citation Rail (Asymmetric Layout)
 # ==========================================
-def render_screen_8_main_results():
-    render_screen_0_header()
-    
-    st.markdown("### Statutory Evidence & Compliance Dashboard")
-    
-    # Check if real synthesis result exists in session state
-    synth = st.session_state.get("synthesis_result")
-    if synth and not synth.get("should_abstain"):
-        sec_3p = synth["section_3p"]
-        gap_items = synth["gap_navigator"]
-        exec_summary = synth.get("executive_summary", "")
-    else:
-        sec_3p = mock_data.MOCK_SECTION_3P_INDIA if "International" not in st.session_state.jurisdiction else mock_data.MOCK_SECTION_3P_INTERNATIONAL
-        gap_items = mock_data.MOCK_GAP_NAVIGATOR_ITEMS
-        exec_summary = ""
+def _render_jurisdiction_panel(sec_3p: dict, gap_items: list, label: str, panel_key_prefix: str):
+    """
+    Helper: renders a single-jurisdiction Section 3(p) + Gap Navigator block.
+    Called twice for Compare Both, once for single-jurisdiction mode.
+    """
+    if label:
+        st.markdown(f"**{label}**")
 
-    if exec_summary:
-        st.markdown(
-            f'<div class="sakti-card" style="border-left: 4px solid var(--accent-blue); background: rgba(43, 92, 138, 0.08); margin-bottom: 1rem;"><div style="font-weight: 700; color: var(--accent-blue-bright); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">EXECUTIVE REGULATORY SUMMARY</div><p style="color: var(--text-primary); font-size: 0.92rem; margin-top: 0.3rem; margin-bottom: 0;">{exec_summary}</p></div>',
-            unsafe_allow_html=True
-        )
+    badge_html = render_status_badge(sec_3p["status"])
+    st.markdown(
+        f'<div class="sakti-card"><div class="sakti-card-title">Status: {badge_html}</div>'
+        f'<p style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.55;">{sec_3p["evidence"]}</p>'
+        f'<div style="margin-top: 0.75rem;"><span style="font-size: 0.8rem; color: var(--text-muted);">Traceable Citation:</span></div></div>',
+        unsafe_allow_html=True
+    )
+    cit = sec_3p["citation"]
+    if st.button(f"📑 [{cit['document']} — {cit['section']}]", key=f"btn_cit_3p_{panel_key_prefix}"):
+        st.session_state.active_citation = cit
 
-    # Asymmetric 2-Column Layout (Wider Content + Side Rail)
-    main_col, side_rail = st.columns([2.3, 1.1])
-    
-    with main_col:
-        # Section 1: Section 3(p) Check
-        st.markdown("#### 1. Section 3(p) Traditional Knowledge Patent-Bar Check")
-        
-        badge_html = render_status_badge(sec_3p["status"])
-        st.markdown(
-            f'<div class="sakti-card"><div class="sakti-card-title">Status: {badge_html}</div><p style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.55;">{sec_3p["evidence"]}</p><div style="margin-top: 0.75rem;"><span style="font-size: 0.8rem; color: var(--text-muted);">Traceable Citation:</span></div></div>',
-            unsafe_allow_html=True
-        )
-        
-        # Clickable Citation Chip
-        cit = sec_3p["citation"]
-        if st.button(f"📑 [{cit['document']} — {cit['section']}]", key="btn_cit_3p"):
-            st.session_state.active_citation = cit
+    st.markdown("<div class='tkdl-note'>🟡 Traditional Knowledge Demonstration Corpus — illustrative, not TKDL. Disclosed sample database.</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='tkdl-note'>🟡 Traditional Knowledge Demonstration Corpus — illustrative, not TKDL. Disclosed sample database.</div>", unsafe_allow_html=True)
-        
-        # Section 2: Innovation Gap Navigator
-        st.markdown("---")
-        st.markdown("#### 2. Novelty & Innovation Gap Navigator")
-        
+    if gap_items:
+        st.markdown("**Novelty & Innovation Gap Navigator**")
         for idx, item in enumerate(gap_items):
             col_a, col_b, col_c = st.columns([2, 2.4, 0.7])
             with col_a:
@@ -507,42 +516,162 @@ def render_screen_8_main_results():
                     unsafe_allow_html=True
                 )
             with col_c:
-                if st.button("Evidence", key=f"btn_gap_{idx}_{item['feature_name']}"):
+                if st.button("Evidence", key=f"btn_gap_{panel_key_prefix}_{idx}"):
                     st.session_state.active_citation = item["citation"]
             st.caption(item["evidence"])
             st.markdown("<hr style='margin: 0.4rem 0; border-color: var(--border-subtle);'>", unsafe_allow_html=True)
 
 
-        # Section 3: IP Options Panel
+def render_screen_8_main_results():
+    render_screen_0_header()
+    render_back_button()
+
+    st.markdown("### Statutory Evidence & Compliance Dashboard")
+
+    # Check if real synthesis result exists in session state
+    synth = st.session_state.get("synthesis_result")
+    classification = {}
+    if synth and not synth.get("should_abstain"):
+        sec_3p_raw = synth["section_3p"]
+        gap_items_raw = synth["gap_navigator"]
+        exec_summary = synth.get("executive_summary", "")
+        classification = synth.get("classification", {})
+    else:
+        sec_3p_raw = mock_data.MOCK_SECTION_3P_INDIA if "International" not in st.session_state.jurisdiction else mock_data.MOCK_SECTION_3P_INTERNATIONAL
+        gap_items_raw = mock_data.MOCK_GAP_NAVIGATOR_ITEMS
+        exec_summary = ""
+
+    # Detect Compare Both shape: {"india": {...}, "international": {...}}
+    is_compare_both = isinstance(sec_3p_raw, dict) and "india" in sec_3p_raw and "international" in sec_3p_raw
+
+    if exec_summary:
+        st.markdown(
+            f'<div class="sakti-card" style="border-left: 4px solid var(--accent-blue); background: rgba(43, 92, 138, 0.08); margin-bottom: 1rem;">'
+            f'<div style="font-weight: 700; color: var(--accent-blue-bright); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">EXECUTIVE REGULATORY SUMMARY</div>'
+            f'<p style="color: var(--text-primary); font-size: 0.92rem; margin-top: 0.3rem; margin-bottom: 0;">{exec_summary}</p></div>',
+            unsafe_allow_html=True
+        )
+
+    # Asymmetric 2-Column Layout (Wider Content + Side Rail)
+    main_col, side_rail = st.columns([2.3, 1.1])
+
+    with main_col:
+        # ----------------------------------------------------------------
+        # Section 1: Section 3(p) Check
+        # ----------------------------------------------------------------
+        st.markdown("#### 1. Section 3(p) Traditional Knowledge Patent-Bar Check")
+
+        if is_compare_both:
+            # Compare Both: two clearly separate India | International panels
+            india_gap = gap_items_raw.get("india", []) if isinstance(gap_items_raw, dict) else []
+            intl_gap = gap_items_raw.get("international", []) if isinstance(gap_items_raw, dict) else []
+            india_col, intl_col = st.columns(2)
+            with india_col:
+                _render_jurisdiction_panel(sec_3p_raw["india"], india_gap, "🇮🇳 India", "india")
+            with intl_col:
+                _render_jurisdiction_panel(sec_3p_raw["international"], intl_gap, "🌍 International", "intl")
+            # Primary side for the side-rail Grounding Sufficiency Meter.
+            # MUST use pick_primary_side() to stay in sync with synthesize_results()
+            # executive summary selection — hardcoding India here would show a contradictory
+            # sufficiency level when International is stronger.
+            _india_suff = sec_3p_raw["india"].get("sufficiency", "HIGH")
+            _intl_suff  = sec_3p_raw["international"].get("sufficiency", "HIGH")
+            _primary    = pick_primary_side(_india_suff, _intl_suff)
+            primary_sufficiency = _india_suff if _primary == "india" else _intl_suff
+        else:
+            # Single jurisdiction
+            _render_jurisdiction_panel(sec_3p_raw, [], "", "single")
+            # Section 2: Innovation Gap Navigator (single-jurisdiction only; Compare Both embeds it above)
+            st.markdown("---")
+            st.markdown("#### 2. Novelty & Innovation Gap Navigator")
+            gap_items_list = gap_items_raw if isinstance(gap_items_raw, list) else []
+            for idx, item in enumerate(gap_items_list):
+                col_a, col_b, col_c = st.columns([2, 2.4, 0.7])
+                with col_a:
+                    st.markdown(f"**{item['feature_name']}**")
+                with col_b:
+                    item_status = item["status"]
+                    item_sufficiency = item.get("sufficiency", "MEDIUM")
+                    st.markdown(
+                        render_status_badge(item_status) + render_confidence_bar(item_sufficiency, item_status),
+                        unsafe_allow_html=True
+                    )
+                with col_c:
+                    if st.button("Evidence", key=f"btn_gap_main_{idx}"):
+                        st.session_state.active_citation = item["citation"]
+                st.caption(item["evidence"])
+                st.markdown("<hr style='margin: 0.4rem 0; border-color: var(--border-subtle);'>", unsafe_allow_html=True)
+            primary_sufficiency = sec_3p_raw.get("sufficiency", "HIGH") if isinstance(sec_3p_raw, dict) else "HIGH"
+
+        # ----------------------------------------------------------------
+        # Section 3: Core IPR Recommendation Map
+        # ----------------------------------------------------------------
         st.markdown("---")
         st.markdown("#### 3. Core IPR Recommendation Map")
+
+        # Build display map — overlay Patent row dynamically based on real classification result
+        display_ip_map = [dict(entry) for entry in mock_data.MOCK_IP_MAP]
+        if classification.get("section_3p_flag") and not is_compare_both:
+            # Determine real 3(p) status from single-jurisdiction result
+            real_status = sec_3p_raw.get("status", "") if isinstance(sec_3p_raw, dict) else ""
+            if real_status == "🔴 Evidence Found":
+                for entry in display_ip_map:
+                    if entry["ip_type"] == "Patent":
+                        entry["status"] = "🔴 Evidence Found"
+                        entry["description"] = (
+                            "Section 3(p) Traditional Knowledge evidence confirmed in corpus. "
+                            "This formulation is likely excluded from patent protection under Section 3(p) of Patents Act, 1970."
+                        )
+
         grid_a, grid_b = st.columns(2)
-        for idx, ip in enumerate(mock_data.MOCK_IP_MAP):
+        for idx, ip in enumerate(display_ip_map):
             target_col = grid_a if idx % 2 == 0 else grid_b
             with target_col:
                 st.markdown(
-                    f'<div class="sakti-card sakti-card-interactive"><div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">{ip["ip_type"]}</div><div style="margin: 0.3rem 0;">{render_status_badge(ip["status"])}</div><p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.3rem;">{ip["description"]}</p></div>',
+                    f'<div class="sakti-card sakti-card-interactive">'
+                    f'<div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">{ip["ip_type"]}</div>'
+                    f'<div style="margin: 0.3rem 0;">{render_status_badge(ip["status"])}</div>'
+                    f'<p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.3rem;">{ip["description"]}</p></div>',
                     unsafe_allow_html=True
                 )
 
+        # ----------------------------------------------------------------
+        # Issue 5 — ABS Compliance Flag Card
+        # ----------------------------------------------------------------
+        if classification.get("abs_flag"):
+            st.markdown(
+                '<div class="sakti-card" style="border-left: 4px solid #F39C12; background: rgba(243,156,18,0.07); margin-top: 0.5rem;">'
+                '<div style="font-weight: 700; color: #F39C12; font-size: 0.9rem;">'
+                '⚠️ Biological Resource / ABS Compliance Flag</div>'
+                '<p style="color: var(--text-primary); font-size: 0.88rem; line-height: 1.55; margin-top: 0.4rem; margin-bottom: 0;">'
+                "This product's ingredients may be sourced from Indian biological resources, which can trigger "
+                'Access-and-Benefit-Sharing considerations under the Biological Diversity Act. '
+                'This is a compliance-routing flag, not a final determination.</p></div>',
+                unsafe_allow_html=True
+            )
+
     with side_rail:
         st.markdown("#### Evidence & Action Rail")
-        
+
         # Evidence Sufficiency Meter Widget
-        st.markdown(render_sufficiency_meter(sec_3p.get("sufficiency", "HIGH")), unsafe_allow_html=True)
-        
+        st.markdown(render_sufficiency_meter(primary_sufficiency), unsafe_allow_html=True)
+
         # Next Steps Box
         st.markdown(
-            '<div class="sakti-card"><div class="sakti-card-title" style="font-size: 0.95rem;">Required Next Actions</div><ul style="color: var(--text-primary); font-size: 0.85rem; padding-left: 1rem; line-height: 1.5;"><li>Verify Section 3(p) prior-art evidence against official patent office manuals</li><li>File trademark application for brand protection</li><li>Consult registered patent practitioner for specification drafting</li></ul></div>',
+            '<div class="sakti-card"><div class="sakti-card-title" style="font-size: 0.95rem;">Required Next Actions</div>'
+            '<ul style="color: var(--text-primary); font-size: 0.85rem; padding-left: 1rem; line-height: 1.5;">'
+            '<li>Verify Section 3(p) prior-art evidence against official patent office manuals</li>'
+            '<li>File trademark application for brand protection</li>'
+            '<li>Consult registered patent practitioner for specification drafting</li></ul></div>',
             unsafe_allow_html=True
         )
-        
+
         # Terracotta Accent Escalation Button
         st.markdown("<div style='margin-bottom: 0.75rem;'>", unsafe_allow_html=True)
         if st.button("Talk to a Human Expert →", key="btn_escalate_rail", use_container_width=True):
             navigate_to("escalation")
         st.markdown("</div>", unsafe_allow_html=True)
-        
+
         if st.button("🛡️ Demonstrate Safe Abstention View", key="btn_abstain_rail", use_container_width=True):
             navigate_to("abstention")
 
@@ -551,7 +680,10 @@ def render_screen_8_main_results():
             st.markdown("---")
             active_cit = st.session_state.active_citation
             st.markdown(
-                f'<div class="glassmorphism-side-panel"><div style="color: #58A6FF; font-weight: 700; font-size: 0.95rem; font-family: \'Space Grotesk\', sans-serif;">📑 RETRIEVED STATUTORY EXCERPT</div><div style="color: var(--text-primary); font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.4;"><strong>Document:</strong> {active_cit["document"]}<br><strong>Section:</strong> {active_cit["section"]}</div><div class="exact-source-highlight">"{active_cit["exact_text"]}"</div><div style="color: var(--text-muted); font-size: 0.75rem;">Level A — Primary Statutory Authority</div></div>',
+                f'<div class="glassmorphism-side-panel"><div style="color: #58A6FF; font-weight: 700; font-size: 0.95rem; font-family: \'Space Grotesk\', sans-serif;">📑 RETRIEVED STATUTORY EXCERPT</div>'
+                f'<div style="color: var(--text-primary); font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.4;"><strong>Document:</strong> {active_cit["document"]}<br><strong>Section:</strong> {active_cit["section"]}</div>'
+                f'<div class="exact-source-highlight">"{active_cit["exact_text"]}"</div>'
+                f'<div style="color: var(--text-muted); font-size: 0.75rem;">Level A — Primary Statutory Authority</div></div>',
                 unsafe_allow_html=True
             )
             if st.button("Close Citation Panel", key="btn_close_panel", use_container_width=True):
@@ -565,6 +697,7 @@ def render_screen_8_main_results():
 # ==========================================
 def render_screen_9_direct_qa():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Statutory Knowledge Base Query")
     st.write("Query official Indian or International legal sources directly:")
@@ -614,6 +747,7 @@ def render_screen_9_direct_qa():
 # ==========================================
 def render_screen_abstention():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Safe Abstention Protocol")
     ab = dict(mock_data.MOCK_ABSTENTION_CASE)
@@ -621,7 +755,7 @@ def render_screen_abstention():
     if st.session_state.get("abstention_reason"):
         ab["evidence"] = st.session_state.get("abstention_reason")
     
-    options_html = "".join([f"<li>• {opt}</li>" for opt in ab['user_options']])
+    options_html = "".join([f"<li>{opt}</li>" for opt in ab['user_options']])
     st.markdown(
         f'<div class="abstention-card"><h2 style="color: #58A6FF; font-family: \'Space Grotesk\', sans-serif;">🛡️ WE CAN\'T RELIABLY ANSWER THIS</h2><div style="margin: 0.75rem 0;">{render_status_badge(ab["status"])}</div>{render_sufficiency_meter(ab["sufficiency"])}<p style="color: var(--text-primary); font-size: 0.95rem; max-width: 650px; margin: 1rem auto;">{ab["evidence"]}</p><div style="text-align: left; background: var(--bg-base); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle);"><strong style="color: var(--text-primary);">Recommended Next Steps:</strong><ul style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.88rem;">{options_html}</ul></div></div>',
         unsafe_allow_html=True
@@ -642,6 +776,7 @@ def render_screen_abstention():
 # ==========================================
 def render_screen_10_escalation():
     render_screen_0_header()
+    render_back_button()
     
     st.markdown("### Human Expert Escalation Protocol")
     

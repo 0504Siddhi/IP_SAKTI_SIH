@@ -257,6 +257,19 @@ h1, h2, h3, h4, h5, h6, .display-font {
     font-weight: 600;
 }
 
+.badge-green {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(39, 174, 96, 0.18);
+    color: #27AE60;
+    border: 1px solid #27AE60;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 /* Clickable Citation Chips with Glow Hover */
 .citation-chip-btn {
     display: inline-flex;

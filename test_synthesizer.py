@@ -68,5 +68,44 @@ class TestSynthesizerModule(unittest.TestCase):
         self.assertTrue(should_abstain)
         self.assertIn("Vibranium Bhasma", reason)
 
+    def test_safe_abstention_low_evidence_non_keyword(self):
+        """
+        Issue 2: evidence-based abstention path fires for a real ingredient (not in fake_terms)
+        when retrieval_3p genuinely returns sufficiency=LOW.
+        """
+        intake = {
+            "product_name": "Brahmi Memory Capsule",
+            "main_ingredient": "Brahmi",
+            "scientific_name": "Bacopa monnieri",
+            "intended_purpose": "Memory enhancement"
+        }
+        # Simulate retriever returning LOW sufficiency (e.g. invented extraction process)
+        retrieval_3p = {"sufficiency": "LOW"}
+
+        should_abstain, reason = check_sufficiency(intake, retrieval_3p)
+        self.assertTrue(should_abstain)
+        self.assertIn("insufficient", reason.lower())
+
+    def test_compare_both_partial_low_does_not_abstain(self):
+        """
+        Issue 3 correction: when Compare Both has India=LOW and International=HIGH,
+        should_abstain must be False — only one side is weak; both panels still render.
+        """
+        intake = {
+            "product_name": "Ashwagandha Capsule",
+            "main_ingredient": "Ashwagandha",
+            "scientific_name": "Withania somnifera",
+            "intended_purpose": "Stress support"
+        }
+        retrieval_3p = {
+            "india": {"sufficiency": "LOW"},
+            "international": {"sufficiency": "HIGH"}
+        }
+
+        should_abstain, reason = check_sufficiency(intake, retrieval_3p)
+        self.assertFalse(should_abstain)
+        self.assertEqual(reason, "")
+
+
 if __name__ == "__main__":
     unittest.main()

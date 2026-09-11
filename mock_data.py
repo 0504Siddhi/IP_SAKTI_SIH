@@ -119,7 +119,7 @@ MOCK_IP_MAP = [
     },
     {
         "ip_type": "Trademark",
-        "status": "🔴 Evidence Found",
+        "status": "🟢 Recommended",
         "description": "Recommended for protecting product and brand name (e.g., 'AshwaCalm'). Prevents commercial brand infringement."
     },
     {
