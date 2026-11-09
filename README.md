@@ -1,4 +1,4 @@
-# IP-SAKTI Sahayak (🏛️ आयुर्वेद नियामक सहाय्यक)
+# IP-SAKTI Sahayak 
 
 > **Regulatory & Intellectual Property Decision-Support Infrastructure for Ayurveda Innovations**
 
@@ -53,7 +53,7 @@ IP-SAKTI Sahayak bridges this gap through:
 
 ## Application Screenshots
 
-The screenshots below highlight the core end-to-end workflow and primary decision-support capabilities of IP-SAKTI Sahayak, captured from the live application at 1920×1080 resolution using a synthetic sample formulation (*Ashwagandha Stress Relief Formulation*).
+The screenshots below highlight the core end-to-end workflow and primary decision-support capabilities of IP-SAKTI Sahayak using a synthetic sample formulation (*Ashwagandha Stress Relief Formulation*).
 
 ### 1. Main Application Interface
 The central portal dashboard featuring dual-pathway routing (Formulation Analysis vs. Direct Statutory Q&A), active indexed corpus status indicator, multi-lingual language selector, and statutory coverage metrics.
