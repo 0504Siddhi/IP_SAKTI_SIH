@@ -1,337 +1,254 @@
-# 🏛️ IP-SAKTI Sahayak
+# IP-SAKTI Sahayak (🏛️ आयुर्वेद नियामक सहाय्यक)
 
-### Ayurveda Regulatory Intelligence & Intellectual Property Decision-Support Platform
+> **Regulatory & Intellectual Property Decision-Support Infrastructure for Ayurveda Innovations**
 
-> ⚠️ **Legal Disclaimer:** This prototype provides information, not legal advice. Verify outputs with official sources or a qualified professional before acting.
-
-## 🎯 Overview
-
-**IP-SAKTI Sahayak** is a citation-grounded decision-support prototype for Ayurveda product innovators, practitioners, and researchers.
-
-It helps with:
-
-- Regulatory classification across 7 product categories
-- **Patents Act Section 3(p)** Traditional Knowledge screening
-- Novelty & Innovation Gap analysis
-- IPR route recommendations
-- India / International jurisdiction-aware evidence retrieval
-- Safe abstention when evidence is insufficient
-
-## 🚨 Problem
-
-Ayurveda innovators face:
-
-- Complex and overlapping regulatory frameworks
-- Difficulty identifying the correct regulatory pathway
-- Traditional Knowledge and Section 3(p) patent concerns
-- Limited access to structured, citation-backed regulatory intelligence
-
-## 💡 Solution
-
-IP-SAKTI combines **deterministic rule-based logic + LLM assistance + RAG** over a curated local statutory corpus.
-
-```text
-User Input
-    ↓
-LLM / Heuristic Structured Extraction
-    ↓
-Mandatory User Confirmation
-    ↓
-Deterministic Classification
-    ↓
-Jurisdiction-Filtered Chroma Retrieval
-    ↓
-Evidence + Gap Analysis
-    ↓
-LLM / Template Synthesis
-    ↓
-Safe Abstention Check
-    ↓
-Results Dashboard
-```
-
-### Core principle
-
-> **Rules decide. Evidence supports. LLM explains.**
-
-The LLM is not used to make the regulatory classification decision.
+IP-SAKTI Sahayak is a specialized, multi-stage legal and regulatory intelligence platform designed for Ayurvedic formulations, herbal extracts, and traditional medicine innovations. It evaluates statutory product pathways under Indian law (Drugs & Cosmetics Act, FSSAI Ayurveda-Aahar, Biological Diversity Act) and international treaties (WIPO GRATK Treaty, Nagoya Protocol), screens patent-eligibility risks under **Section 3(p) of the Patents Act, 1970**, and navigates novelty gaps with citation-grounded evidence.
 
 ---
 
-## ✨ Key Features
+## Table of Contents
 
-### 1. Deterministic Regulatory Classification
-
-Pure Python decision tree with 7 output categories:
-
-1. Classical / Generic ASU Medicine
-2. Patent / Proprietary Ayurvedic Medicine
-3. New / Non-Classical Drug
-4. Phytopharmaceutical
-5. Ayurveda-Aahar / Nutraceutical
-6. Cosmetic
-7. Insufficient Information
-
-### 2. Section 3(p) Traditional Knowledge Screening
-
-Retrieves jurisdiction-filtered evidence related to the Traditional Knowledge patent bar and returns:
-
-- Evidence status
-- Document
-- Section
-- Exact retrieved text
-- Source URL
-- Evidence sufficiency
-
-### 3. Innovation Gap Navigator
-
-Checks three independent dimensions:
-
-- 🌿 Botanical ingredient
-- 💊 Therapeutic claim
-- ⚙️ Manufacturing process
-
-### 4. Citation-Grounded RAG
-
-A local **ChromaDB** knowledge base stores curated statutory and reference documents with metadata such as:
-
-`act · section · jurisdiction · authority · topic · source_url`
-
-The current corpus contains **12 documents** covering India and international sources.
-
-### 5. Safe Abstention
-
-The system avoids speculative answers when:
-
-- An ingredient is unrecognized
-- A claim is unsupported/non-empirical
-- Retrieved evidence has low sufficiency
-
-### 6. Human Confirmation Gate
-
-Extracted product information is shown in an editable form before classification and retrieval.
-
-### 7. IPR Recommendation Map
-
-Provides preliminary routes for:
-
-- Patent
-- Trademark
-- Design
-- Trade Secret
-
-### 8. Multi-language UI
-
-English, Hindi, and Marathi selection is supported.
+- [Overview](#overview)
+- [Key Capabilities](#key-capabilities)
+- [Application Screenshots](#application-screenshots)
+  - [1. Main Application Interface](#1-main-application-interface)
+  - [2. Product Formulation Input](#2-product-formulation-input)
+  - [3. Human Confirmation Step](#3-human-confirmation-step)
+  - [4. Regulatory Classification](#4-regulatory-classification)
+  - [5. Traditional Knowledge Screening](#5-traditional-knowledge-screening)
+  - [6. Evidence and IPR Recommendations](#6-evidence-and-ipr-recommendations)
+- [Feature Status: Demonstrated vs. Planned](#feature-status-demonstrated-vs-planned)
+- [System Architecture & Processing Pipeline](#system-architecture--processing-pipeline)
+- [Statutory Corpus Scope](#statutory-corpus-scope)
+- [Local Installation & Setup](#local-installation--setup)
+- [Running the Test Suites](#running-the-test-suites)
+- [Legal & Regulatory Disclaimer](#legal--regulatory-disclaimer)
 
 ---
 
-## 🧠 Technology Stack
+## Overview
 
-| Layer | Technology |
-|---|---|
-| UI | Streamlit |
-| Language | Python 3.9+ |
-| LLM | Google Gemini 2.5 Flash |
-| Vector DB | ChromaDB |
-| Classification | Pure Python |
-| Styling | Vanilla CSS |
-| Image Handling | Pillow |
-| Data Processing | Pandas |
-| Testing | Python unittest / pytest commands |
+Traditional Ayurvedic formulations encounter unique statutory friction when entering modern commercial and intellectual property ecosystems. In India, **Section 3(p) of the Patents Act, 1970** bars patenting of traditional knowledge or aggregations/duplications of known herbal properties. Simultaneously, classification determines whether a product is regulated as a **Classical ASU Medicine**, **Patent/Proprietary ASU Medicine (Rule 158B)**, **Ayurveda-Aahar (FSSAI 2022)**, **Phytopharmaceutical Drug**, or **Cosmetic**.
+
+IP-SAKTI Sahayak bridges this gap through:
+1. **Deterministic Regulatory Routing**: Pure rule-based Python logic (zero hallucination risk for statutory branching).
+2. **Universal-7 Parameter Extraction**: Structured parameterization of product formulation details.
+3. **Mandatory Human Confirmation Gate**: Enforces user review of extracted parameters prior to legal rule evaluation.
+4. **Metadata-Filtered Vector Retrieval**: Scoped semantic and exact retrieval against indexed Tier-1 statutory corpora in local Chroma DB.
+5. **Traceable Statutory Grounding**: Every finding cites document, section, and verified verbatim statutory excerpt.
+6. **Safe Abstention Protocol**: Explicit refusal to generate speculative guidance when inputs contain unrecognized substances or insufficient grounding.
 
 ---
 
-## 🏗️ Architecture
+## Key Capabilities
 
-```text
-ip_sakti_sahayak/
-│
-├── app.py            # Streamlit UI and workflow
-├── classifier.py     # Deterministic classification + normalization
-├── extractor.py      # Gemini / heuristic extraction
-├── retriever.py      # RAG retrieval + Section 3(p) + gap analysis
-├── synthesizer.py    # Synthesis + safe abstention
-├── corpus_data.py    # Curated statutory corpus
-├── chunker.py        # Metadata-aware document chunking
-├── ingest.py         # ChromaDB ingestion
-├── mock_data.py      # Offline/mock data
-├── styles.css        # UI styling
-├── requirements.txt
-│
-└── tests/
-    ├── golden_tests.py
-    ├── test_classifier.py
-    ├── test_extractor.py
-    ├── test_retriever.py
-    ├── test_synthesizer.py
-    └── test_retrieval.py
+- **Dual Interaction Pathways**:
+  - **Pathway A (Formulation Analysis)**: End-to-end multi-parameter regulatory classification, Section 3(p) prior-art risk analysis, and innovation-gap navigation.
+  - **Pathway B (Direct Statutory Q&A)**: Direct semantic queries against indexed Indian Acts, Patent Office Manuals, and international treaties.
+- **Strict Jurisdiction Isolation**: Dedicated filtering for India, International (WIPO GRATK 2024 / TRIPS / Nagoya), or comparative analysis without cross-jurisdiction contamination.
+- **Evidence Confidence & Sufficiency Gauges**: 3-tier visual sufficiency meter (`HIGH` / `MEDIUM` / `LOW`) and color-coded status badges (`🔴 Evidence Found`, `🟡 Requires Review`, `🔵 No Direct Match in Searched Corpus`).
+- **Interactive Citation Rail**: Asymmetric layout with slide-out glassmorphism drawer showing verified primary statutory text.
+
+---
+
+## Application Screenshots
+
+The screenshots below highlight the core end-to-end workflow and primary decision-support capabilities of IP-SAKTI Sahayak, captured from the live application at 1920×1080 resolution using a synthetic sample formulation (*Ashwagandha Stress Relief Formulation*).
+
+### 1. Main Application Interface
+The central portal dashboard featuring dual-pathway routing (Formulation Analysis vs. Direct Statutory Q&A), active indexed corpus status indicator, multi-lingual language selector, and statutory coverage metrics.
+
+![Main Application Interface](docs/screenshots/01_main_interface.png)
+*Figure 1: Welcome interface with pathway selection, live corpus status, and statutory scope strip.*
+
+---
+
+### 2. Product Formulation Input
+Structured input interface capturing botanical composition, extraction ratio, dosage form, intended therapeutic claims, and administration route.
+
+![Product Information Input](docs/screenshots/04_product_information_input.png)
+*Figure 2: Product formulation specification screen capturing active ingredients and claims.*
+
+---
+
+### 3. Human Confirmation Step
+Mandatory human-in-the-loop confirmation gate displaying AI-extracted Universal-7 formulation parameters for user verification before rule evaluation.
+
+![Human Confirmation Step](docs/screenshots/05_information_confirmation.png)
+*Figure 3: Parameter verification gate ensuring formulation accuracy before classification.*
+
+---
+
+### 4. Regulatory Classification
+Preliminary statutory classification generated by the deterministic Python rule engine, showing category assignment, rule basis bullets, and statutory disclaimers.
+
+![Regulatory Classification](docs/screenshots/07_regulatory_classification.png)
+*Figure 4: Deterministic regulatory routing result with statutory rule rationale.*
+
+---
+
+### 5. Traditional Knowledge Screening
+Section 3(p) Traditional Knowledge patent-eligibility screening dashboard with status badge, evidence summary, and grounding sufficiency meter.
+
+![Traditional Knowledge Screening](docs/screenshots/08_traditional_knowledge_screening.png)
+*Figure 5: Section 3(p) prior-art screening dashboard with grounding sufficiency evaluation.*
+
+---
+
+### 6. Evidence and IPR Recommendations
+Core intellectual property protection strategy mapping (Patents, Trademarks, Trade Secrets) alongside the slide-out glassmorphism drawer displaying verified primary statutory excerpts.
+
+![Evidence and IPR Recommendations](docs/screenshots/10_evidence_and_ipr_recommendations.png)
+*Figure 6: IPR recommendation map with active glassmorphism citation rail showing verbatim statutory authority.*
+
+---
+
+**[View all 13 application screenshots →](https://github.com/0504Siddhi/IP_SAKTI_SIH/tree/main/docs/screenshots)**
+
+---
+
+## Feature Status: Demonstrated vs. Planned
+
+To maintain transparency, the table below outlines the operational status of all system components:
+
+| Feature / Module | Status | Implementation Details |
+| :--- | :---: | :--- |
+| **Welcome & Dual Pathway Routing** | **Demonstrated (Live)** | Fully functional interactive UI router in `app.py`. |
+| **Jurisdiction Scoping** | **Demonstrated (Live)** | Strict metadata-filtered retrieval for India vs. International. |
+| **Free-Text Intake & Parameterization** | **Demonstrated (Live)** | Universal-7 parameter extraction with offline heuristic fallback. |
+| **Mandatory Confirmation Gate** | **Demonstrated (Live)** | Interactive form gate; requires confirmation before rule execution. |
+| **7-Category Deterministic Classifier** | **Demonstrated (Live)** | 100% deterministic pure-Python decision tree in `classifier.py`. |
+| **Section 3(p) Risk Screening** | **Demonstrated (Live)** | Chroma DB vector search against Patents Act & API monographs. |
+| **Innovation Gap Navigator** | **Demonstrated (Live)** | Granular feature decomposition with confidence progress bars. |
+| **Interactive Citation Rail** | **Demonstrated (Live)** | Glassmorphism drawer rendering verbatim Level-A statutory text. |
+| **Direct Statutory Q&A** | **Demonstrated (Live)** | Semantic search across indexed legal corpus with instant retrieval. |
+| **Safe Abstention Protocol** | **Demonstrated (Live)** | Guardrail in `synthesizer.py` rejecting fake/ungrounded inputs. |
+| **Expert Legal Escalation** | **Demonstrated (Live)** | Official authority portal directory and escalation workflows. |
+| **Dark / Light Theme Toggle** | **Demonstrated (Live)** | Dynamic CSS variable injection in `styles.css`. |
+| **Multi-Language Selector** | **Demonstrated (Live UI)** | Language dropdown implemented; localized legal texts in roadmap. |
+| **Vision-OCR Label Scanning** | *Simulated / Prototype* | OCR input simulated via offline normalized text extractor. |
+| **Official TKDL Integration** | *Planned / Disclaimed* | Uses illustrative demonstration corpus; official TKDL requires government credentials. |
+| **Automated Patent Draft Generator** | *Planned Roadmap* | Specification drafting requires certified patent practitioner. |
+
+---
+
+## System Architecture & Processing Pipeline
+
+```
+                                      +-----------------------------------+
+                                      |   User Input: Product Narrative   |
+                                      +-----------------------------------+
+                                                        |
+                                                        v
+                                      +-----------------------------------+
+                                      |  Step 3: Universal-7 Extraction   |
+                                      |   (Heuristic / Gemini Fallback)   |
+                                      +-----------------------------------+
+                                                        |
+                                                        v
+                                      +-----------------------------------+
+                                      |  Step 3: Mandatory Confirmation   |
+                                      |       Form Gate (Human Review)    |
+                                      +-----------------------------------+
+                                                        |
+                                                        v
+                               +------------------------+------------------------+
+                               |                                                 |
+                               v                                                 v
+           +---------------------------------------+         +---------------------------------------+
+           |   Step 2: Deterministic Classifier    |         |   Step 4: Metadata-Filtered Retrieval |
+           |  (7 Statutory Categories in Python)   |         |      (Chroma DB Vector Collection)    |
+           +---------------------------------------+         +---------------------------------------+
+                               |                                                 |
+                               +------------------------+------------------------+
+                                                        |
+                                                        v
+                                      +-----------------------------------+
+                                      |   Step 6: Sufficiency Check &     |
+                                      |     Safe Abstention Threshold     |
+                                      +-----------------------------------+
+                                           /                         \
+                          [Sufficiency < LOW]                       [Sufficiency OK]
+                                         /                             \
+                                        v                               v
+                       +-------------------------------+  +-------------------------------+
+                       |    Safe Abstention Screen     |  |   Step 5: Grounded Synthesis  |
+                       | ("We Can't Reliably Answer")  |  |   & Evidence Citation Rail    |
+                       +-------------------------------+  +-------------------------------+
 ```
 
 ---
 
-## 📚 Knowledge Base
+## Statutory Corpus Scope
 
-The prototype currently uses a curated corpus including:
+The local Chroma database (`./chroma_db`) indexes 34 chunked, metadata-tagged documents across primary regulatory and IP authorities:
 
-- Patents Act, 1970 — Section 3(p)
-- Patent Rules, 2003
-- Patent Office Practice and Procedure Manual
-- Drugs and Cosmetics Act, 1940
-- Drugs and Cosmetics Rules, 1945
-- Biological Diversity Act, 2002
-- FSSAI Ayurveda Aahara Regulations, 2022
-- WIPO GRATK Treaty 2024
-- WTO TRIPS Agreement
-- Ayurvedic Pharmacopoeia of India monographs
-- CSIR vs USPTO turmeric patent case
-
-Retrieval is **jurisdiction-scoped** to prevent unintended India/International evidence mixing.
+1. **The Patents Act, 1970 (Amended 2024)**: Section 3(p), Section 3(e), Rule 13(d), Form 1 declarations.
+2. **Manual of Patent Office Practice and Procedure**: Chapter 08.03.02 (Traditional Knowledge & Biological Inventions).
+3. **Drugs and Cosmetics Act, 1940 & Rules 1945**: Section 3(a), Rule 158B (Patent/Proprietary ASU licensing criteria).
+4. **FSSAI Ayurveda-Aahar Regulations, 2022**: Regulation 3, Schedule I-IV (Permitted food ingredients & limits).
+5. **Biological Diversity Act, 2002 (Amended 2023)**: Section 3, Section 6 (Mandatory NBA Access & Benefit Sharing).
+6. **WIPO GRATK Treaty (2024)**: Article 3 (Mandatory disclosure of genetic resources and associated TK origin).
+7. **Ayurvedic Pharmacopoeia of India (API Part I & II)**: Official botanical monographs (Withania somnifera, Curcuma longa).
 
 ---
 
-## 🚀 Setup & Run
+## Local Installation & Setup
 
-### 1. Clone
+### Prerequisites
+- Python 3.10, 3.11, or 3.12
+- Local persistent storage (for Chroma DB vector embeddings)
+- Google Chrome or modern web browser
 
+### 1. Clone Repository & Install Dependencies
 ```bash
-git clone https://github.com/0504Siddhi/IP_SAKTI_SIH.git
-cd IP_SAKTI_SIH
-```
-
-### 2. Create environment
-
-```bash
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+git clone https://github.com/your-org/ip_sakti_sahayak.git
+cd ip_sakti_sahayak
 pip install -r requirements.txt
 ```
 
-### 4. Optional: Gemini API
-
-Set `GEMINI_API_KEY` to enable Gemini-powered extraction and synthesis.
-
-Without the key, the prototype uses its built-in heuristic/template fallbacks.
-
-### 5. Build the local knowledge base
-
+### 2. Ingest Statutory Corpus into Chroma DB
 ```bash
 python ingest.py
 ```
+*Expected output: `[OK] Step 1 Corpus Ingestion Complete! Total indexed records in Chroma: 34`*
 
-### 6. Start the application
-
+### 3. Launch Streamlit Application
 ```bash
 streamlit run app.py
 ```
-
-The app runs locally at:
-
-```text
-http://localhost:8501
-```
+Open your browser at `http://localhost:8501`.
 
 ---
 
-## 🧪 Testing
+## Running the Test Suites
 
-Run the main test suites with:
+The repository includes comprehensive automated test suites covering classification, retrieval, extraction, and golden end-to-end test cases:
 
 ```bash
-python -m pytest test_classifier.py -v
-python -m pytest test_extractor.py -v
-python -m pytest test_retriever.py -v
-python -m pytest test_synthesizer.py -v
-python -m pytest golden_tests.py -v
+# Run all unit tests
+python -m unittest discover
+
+# Run the 6 Golden Test Cases
+python golden_tests.py
 ```
 
-The golden tests cover examples such as:
-
-- Ashwagandha formulation
-- Classical Chyawanprash
-- Purified botanical fraction
-- Synthetic drug
-- Unrecognized ingredient → Safe Abstention
-- International jurisdiction retrieval
-
----
-
-## 🔐 Important Design Decisions
-
-### No speculative LLM classification
-
-Regulatory classification is deterministic and auditable.
-
-### Mandatory confirmation
-
-Users can review and correct extracted parameters before analysis.
-
-### Safe Abstention
-
-The system can explicitly say that available evidence is insufficient instead of generating a confident unsupported answer.
-
-### Citation traceability
-
-Evidence carries document, section, source URL, and retrieved text.
-
-### Offline-first
-
-Core classification and local retrieval work without an external LLM API.
+### Verified Test Cases:
+1. `test_ashwagandha_stress_capsule`: Proprietary ASU formulation with 10:1 extract (`Patent / Proprietary Ayurvedic Medicine`).
+2. `test_chyawanprash_classical`: Classical unchanged Avaleha formulation (`Classical / Generic ASU Medicine`).
+3. `test_turmeric_phytopharmaceutical`: Purified curcuminoid nano-emulsion (`Phytopharmaceutical Pathway`).
+4. `test_synthetic_drug_injection`: Paracetamol synthetic API injection (`New / Non-Classical Drug`).
+5. `test_vibranium_bhasma_abstention`: Fake ingredient triggering `Safe Abstention Protocol`.
+6. `test_international_jurisdiction_gratk`: Cross-border PCT filing triggering WIPO GRATK mandatory disclosure.
 
 ---
 
-## 🔮 Future Scope
+## Legal & Regulatory Disclaimer
 
-The current architecture can be extended with:
-
-- Real OCR / vision integration for product labels
-- Larger statutory and Ayurvedic corpus
-- Full ABS compliance workflow
-- Side-by-side India vs International comparison
-- Expanded ingredient normalization
-- Structured PDF/report export
-
-These are **future extensions, not current implemented features**.
-
----
-
-## 🏆 Smart India Hackathon
-
-**Problem Statement:** 26045  
-**Project:** IP-SAKTI Sahayak  
-**Focus:** Multilingual, RAG-based, source-cited AI assistance for Intellectual Property and regulatory guidance in Ayurveda.
-
----
-
-## ⚖️ Disclaimer
-
-IP-SAKTI Sahayak is a **prototype decision-support system**, not a substitute for legal, regulatory, or professional advice.
-
-Always verify important conclusions against the relevant official source or consult a qualified professional.
-
----
-
-<div align="center">
-
-**IP-SAKTI Sahayak**  
-*Regulatory & IPR Decision-Support Infrastructure for Ayurveda*
-
-**Built for Smart India Hackathon (SIH)**
-
-</div>
+> ⚠️ **IMPORTANT NOTICE:**  
+> IP-SAKTI Sahayak is an informational decision-support and educational tool. **It does NOT provide legal advice, binding patentability opinions, or official regulatory approvals.**
+> 
+> The Traditional Knowledge demonstration database contained in this software is an illustrative sample and is **NOT** the official government Traditional Knowledge Digital Library (TKDL). Prior to commercial manufacture, patent filing, or marketing of any ASU formulation, innovators must consult:
+> - A registered Patent Agent or IP attorney registered with the CGPDTM.
+> - The State Licensing Authority (Ayush) under the Drugs and Cosmetics Act.
+> - The National Biodiversity Authority (NBA) for biological resource clearance.
